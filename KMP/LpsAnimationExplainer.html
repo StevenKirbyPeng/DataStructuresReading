@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LPS 計算動畫說明版</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbe3ee;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --ok: #16a34a;
+      --ok-soft: #dcfce7;
+      --bad: #dc2626;
+      --bad-soft: #fee2e2;
+      --warn: #d97706;
+      --warn-soft: #fef3c7;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"] {
+      flex: 1 1 300px;
+      min-width: 220px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    button {
+      border: none;
+      background: var(--accent);
+      color: white;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button.secondary {
+      background: #475569;
+    }
+    button.light {
+      background: #e5eefc;
+      color: #1e3a8a;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 180px;
+    }
+
+    .pattern-board {
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+
+    .row-label {
+      width: 72px;
+      color: var(--muted);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .board-row {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      gap: 10px;
+      min-height: 62px;
+    }
+
+    .cells {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .cell {
+      width: 56px;
+      min-width: 56px;
+      height: 56px;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      background: white;
+      position: relative;
+      transition: all 0.25s ease;
+    }
+
+    .index-cell {
+      height: 42px;
+      font-size: 16px;
+      color: var(--muted);
+      background: #f8fafc;
+    }
+
+    .lps-cell {
+      font-size: 20px;
+      background: #f8fafc;
+    }
+
+    .current {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-2px);
+    }
+
+    .len {
+      border-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .matched {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .mismatch {
+      border-color: var(--bad);
+      background: var(--bad-soft);
+    }
+
+    .done {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+    }
+
+    .arrow-tag {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      background: #111827;
+      color: white;
+      padding: 2px 7px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .explain {
+      font-size: 16px;
+      line-height: 1.9;
+      background: #f8fbff;
+      border: 1px solid #d7e7ff;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 14px;
+      min-height: 128px;
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .badge {
+      border-radius: 14px;
+      padding: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+
+    .badge-title {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .badge-value {
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 12px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      background: #fafcff;
+    }
+
+    .mini {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .formula {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 14px 16px;
+      border-radius: 16px;
+      margin-top: 12px;
+      font-family: Consolas, monospace;
+      overflow-x: auto;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .compare-visual {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 16px;
+    }
+
+    .compare-title {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .compare-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .compare-label {
+      width: 72px;
+      color: var(--muted);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .segment-box {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      min-height: 48px;
+    }
+
+    .mini-cell {
+      min-width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      background: #fff;
+      padding: 0 10px;
+    }
+
+    .mini-cell.same {
+      background: var(--ok-soft);
+      border-color: var(--ok);
+    }
+
+    .mini-cell.diff {
+      background: var(--bad-soft);
+      border-color: var(--bad);
+    }
+
+    .mini-cell.dim {
+      background: #f8fafc;
+      color: #94a3b8;
+    }
+
+    .compare-arrow {
+      font-size: 18px;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .compare-note {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .dynamic-panel {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #ffffff;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .dynamic-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .ok-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #86efac 0%, #34d399 100%);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 8px 18px rgba(52, 211, 153, 0.28);
+    }
+
+    .dynamic-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+
+    .dynamic-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .dynamic-substring {
+      font-size: 18px;
+      word-break: break-all;
+    }
+
+    .dynamic-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 17px;
+      line-height: 1.6;
+      word-break: break-all;
+    }
+
+    .dynamic-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .dynamic-col-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 720px) {
+      .dynamic-two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dynamic-item {
+      min-height: 28px;
+    }
+
+    .result-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-top: 16px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .result-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 12px;
+      padding: 6px 12px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .status {
+        grid-template-columns: 1fr;
+      }
+      .cell {
+        width: 50px;
+        min-width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>LPS 計算 HTML 動畫說明版</h1>
+      <div class="subtitle">
+        這個頁面會把 KMP 裡面的 <b>LPS（Longest Prefix Suffix）</b> 計算過程，
+        用動畫一步一步展示出來。你可以自己輸入 pattern，也可以用預設範例 <b>ABABAC</b> 來練習。
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>動畫操作區</h2>
+        <div class="controls">
+          <input id="patternInput" type="text" value="ABABAC" placeholder="請輸入 pattern，例如 ABABAC" />
+          <button id="buildBtn">重新產生動畫</button>
+          <button id="prevBtn" class="secondary">上一步</button>
+          <button id="nextBtn" class="secondary">下一步</button>
+          <button id="playBtn" class="light">自動播放</button>
+          <button id="resetBtn" class="light">回到開頭</button>
+        </div>
+
+        <div class="range-row">
+          <span>播放速度</span>
+          <input id="speedRange" type="range" min="300" max="1800" step="100" value="900" />
+          <span id="speedText">900 ms/步</span>
+        </div>
+
+        <div class="pattern-board">
+          <div class="board-row">
+            <div class="row-label">index</div>
+            <div id="indexRow" class="cells"></div>
+          </div>
+          <div class="board-row">
+            <div class="row-label">pattern</div>
+            <div id="patternRow" class="cells"></div>
+          </div>
+          <div class="board-row">
+            <div class="row-label">lps</div>
+            <div id="lpsRow" class="cells"></div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="dot" style="background:#dbeafe"></i> 目前 i</span>
+          <span><i class="dot" style="background:#fef3c7"></i> 目前 len</span>
+          <span><i class="dot" style="background:#dcfce7"></i> 比較成功</span>
+          <span><i class="dot" style="background:#fee2e2"></i> 比較失敗</span>
+          <span><i class="dot" style="background:#f1f5f9"></i> 已完成</span>
+        </div>
+
+        <div id="explainBox" class="explain"></div>
+
+        <div class="status">
+          <div class="badge">
+            <div class="badge-title">目前步驟</div>
+            <div id="stepNow" class="badge-value">0</div>
+          </div>
+          <div class="badge">
+            <div class="badge-title">i</div>
+            <div id="iNow" class="badge-value">-</div>
+          </div>
+          <div class="badge">
+            <div class="badge-title">len</div>
+            <div id="lenNow" class="badge-value">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>前綴 / 後綴同步比較</h2>
+        <div class="mini">
+          這裡會同時顯示目前 <b>prefix（前綴）</b> 與 <b>suffix（後綴）</b> 的比較結果。
+          當 LPS 增加時，代表這兩段字串相同的部分又多了一格；當失敗時，就會看到回跳後縮短再重新比。
+        </div>
+
+        <div class="status" style="margin-top:14px;">
+          <div class="badge">
+            <div class="badge-title">目前前綴 prefix</div>
+            <div id="prefixNow" class="badge-value" style="font-size:22px; word-break:break-all;">-</div>
+          </div>
+          <div class="badge">
+            <div class="badge-title">目前後綴 suffix</div>
+            <div id="suffixNow" class="badge-value" style="font-size:22px; word-break:break-all;">-</div>
+          </div>
+          <div class="badge">
+            <div class="badge-title">目前比較結果</div>
+            <div id="compareNow" class="badge-value" style="font-size:22px;">-</div>
+          </div>
+        </div>
+
+        <div class="formula" id="compareFormula">
+          prefix = -
+          suffix = -
+        </div>
+
+        <div class="compare-visual">
+          <div class="compare-title">目前正在看的子字串，左邊是前綴，右邊是後綴</div>
+          <div class="compare-strip">
+            <div class="compare-label">prefix</div>
+            <div id="prefixVisual" class="segment-box"></div>
+          </div>
+          <div class="compare-strip">
+            <div class="compare-label">suffix</div>
+            <div id="suffixVisual" class="segment-box"></div>
+          </div>
+          <div class="compare-note" id="compareNote">
+            綠色表示目前可對上的部分，紅色表示本步驟比較失敗的位置，灰色表示目前不在共同前後綴內。
+          </div>
+        </div>
+
+        <div class="dynamic-panel">
+          <div class="dynamic-top">
+            <span class="ok-icon">✓</span>
+            <span id="dynamicINow">i = -</span>
+          </div>
+
+          <div class="dynamic-box">
+            <div class="dynamic-title">子字串</div>
+            <div id="dynamicSubstring" class="dynamic-substring">-</div>
+          </div>
+
+          <div class="dynamic-two-col">
+            <div>
+              <div class="dynamic-col-title">prefix：</div>
+              <div class="dynamic-box">
+                <div id="dynamicPrefixList" class="dynamic-list"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="dynamic-col-title">suffix：</div>
+              <div class="dynamic-box">
+                <div id="dynamicSuffixList" class="dynamic-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-row">
+            <span>👉 最長相同：</span>
+            <span id="dynamicBest" class="result-chip">-</span>
+          </div>
+
+          <div class="result-row">
+            <span>👉</span>
+            <span id="dynamicLpsNow">LPS[-] = -</span>
+          </div>
+        </div>
+
+        <div class="mini" style="margin-top:12px;">
+          <b>LPS[i]</b> 的意思是：對於子字串 <b>pattern[0..i]</b>，
+          最長的「前綴」同時也是「後綴」的長度。
+        </div>
+
+        <div class="formula">
+          規則：
+          1. lps[0] = 0
+          2. 若 pattern[i] == pattern[len]：len++, lps[i] = len, i++
+          3. 若 pattern[i] != pattern[len] 且 len != 0：len = lps[len - 1]
+          4. 若 pattern[i] != pattern[len] 且 len == 0：lps[i] = 0, i++
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>子字串</th>
+                <th>最長共同前後綴</th>
+                <th>長度</th>
+              </tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+        </div>
+
+        <div class="footer-note">
+          考試口訣：<b>相同就加一，不同就往前跳，跳到 0 還不同就填 0。</b><br>
+          現在右邊除了總表，也會同步顯示每一步正在比較的 prefix 與 suffix，方便你直接看懂 LPS 為什麼會變大或回跳。
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const patternInput = document.getElementById('patternInput');
+    const buildBtn = document.getElementById('buildBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const speedRange = document.getElementById('speedRange');
+    const speedText = document.getElementById('speedText');
+
+    const indexRow = document.getElementById('indexRow');
+    const patternRow = document.getElementById('patternRow');
+    const lpsRow = document.getElementById('lpsRow');
+    const explainBox = document.getElementById('explainBox');
+    const summaryBody = document.getElementById('summaryBody');
+
+    const stepNow = document.getElementById('stepNow');
+    const iNow = document.getElementById('iNow');
+    const lenNow = document.getElementById('lenNow');
+
+    let steps = [];
+    let summaryRows = [];
+    let currentStep = 0;
+    let timer = null;
+
+    function sanitizePattern(raw) {
+      return raw.replace(/\s+/g, '');
+    }
+
+    function prefixSuffixInfo(str) {
+      let best = '';
+      for (let len = 1; len < str.length; len++) {
+        const prefix = str.slice(0, len);
+        const suffix = str.slice(str.length - len);
+        if (prefix === suffix) best = prefix;
+      }
+      return { best, len: best.length };
+    }
+
+    function buildProperPrefixes(str) {
+      const arr = ['""'];
+      for (let len = 1; len < str.length; len++) {
+        arr.push(str.slice(0, len));
+      }
+      return arr;
+    }
+
+    function buildProperSuffixes(str) {
+      const arr = ['""'];
+      for (let len = 1; len < str.length; len++) {
+        arr.push(str.slice(str.length - len));
+      }
+      return arr;
+    }
+
+    function pushStep(state) {
+      steps.push(JSON.parse(JSON.stringify(state)));
+    }
+
+    function buildAnimation(pattern) {
+      steps = [];
+      summaryRows = [];
+      currentStep = 0;
+      stopAuto();
+
+      if (!pattern.length) {
+        pattern = 'A';
+        patternInput.value = pattern;
+      }
+
+      const p = pattern.split('');
+      const lps = Array(p.length).fill(null);
+      lps[0] = 0;
+
+      pushStep({
+        pattern: p,
+        lps: [...lps],
+        i: 0,
+        len: 0,
+        compareA: null,
+        compareB: null,
+        action: 'init',
+        text: `初始化：第一格 lps[0] 一定是 0。因為只有一個字元「${p[0]}」，不可能有 proper prefix 同時又是 suffix。`
+      });
+
+      let len = 0;
+      let i = 1;
+
+      while (i < p.length) {
+        pushStep({
+          pattern: p,
+          lps: [...lps],
+          i,
+          len,
+          compareA: i,
+          compareB: len,
+          action: 'compare',
+          text: `現在要計算 lps[${i}]。比較 pattern[${i}] =「${p[i]}」和 pattern[${len}] =「${p[len]}」。`
+        });
+
+        if (p[i] === p[len]) {
+          pushStep({
+            pattern: p,
+            lps: [...lps],
+            i,
+            len,
+            compareA: i,
+            compareB: len,
+            action: 'match',
+            text: `兩個字元相同：${p[i]} = ${p[len]}。所以可以把目前共同前後綴長度加一。`
+          });
+
+          len++;
+          lps[i] = len;
+
+          pushStep({
+            pattern: p,
+            lps: [...lps],
+            i,
+            len,
+            compareA: i,
+            compareB: len - 1,
+            action: 'write',
+            text: `更新後 len = ${len}，所以 lps[${i}] = ${len}。接著 i 往右移到下一格。`
+          });
+
+          i++;
+        } else {
+          pushStep({
+            pattern: p,
+            lps: [...lps],
+            i,
+            len,
+            compareA: i,
+            compareB: len,
+            action: 'mismatch',
+            text: `兩個字元不同：${p[i]} ≠ ${p[len]}。這時要看 len 是否為 0。`
+          });
+
+          if (len !== 0) {
+            const oldLen = len;
+            len = lps[len - 1];
+            pushStep({
+              pattern: p,
+              lps: [...lps],
+              i,
+              len,
+              compareA: i,
+              compareB: len,
+              action: 'fallback',
+              text: `因為 len ≠ 0，所以不能直接填 0。改跳到 len = lps[${oldLen - 1}] = ${len}，然後留在同一個 i 重新比較。`
+            });
+          } else {
+            lps[i] = 0;
+            pushStep({
+              pattern: p,
+              lps: [...lps],
+              i,
+              len,
+              compareA: i,
+              compareB: 0,
+              action: 'write-zero',
+              text: `因為 len = 0，而且目前還是不同，所以 lps[${i}] = 0。接著 i 往右移。`
+            });
+            i++;
+          }
+        }
+      }
+
+      pushStep({
+        pattern: p,
+        lps: [...lps],
+        i: p.length - 1,
+        len,
+        compareA: null,
+        compareB: null,
+        action: 'done',
+        text: `計算完成。最後的 LPS 陣列為 [${lps.join(', ')}]。`
+      });
+
+      for (let k = 0; k < p.length; k++) {
+        const sub = p.slice(0, k + 1).join('');
+        const info = prefixSuffixInfo(sub);
+        summaryRows.push({
+          sub,
+          best: info.best || '無',
+          len: info.len
+        });
+      }
+    }
+
+    function cellClass(step, idx, type) {
+      const classes = ['cell'];
+      if (type === 'index') classes.push('index-cell');
+      if (type === 'lps') classes.push('lps-cell');
+
+      const completed = step.lps[idx] !== null;
+      if (completed && type === 'lps') classes.push('done');
+
+      if (idx === step.i && type !== 'index') classes.push('current');
+      if (idx === step.len && step.action !== 'done' && type === 'pattern') classes.push('len');
+
+      if ((step.action === 'match' || step.action === 'write') && (idx === step.compareA || idx === step.compareB) && type === 'pattern') {
+        classes.push('matched');
+      }
+      if ((step.action === 'mismatch' || step.action === 'write-zero') && (idx === step.compareA || idx === step.compareB) && type === 'pattern') {
+        classes.push('mismatch');
+      }
+      if (step.action === 'fallback' && idx === step.compareB && type === 'pattern') {
+        classes.push('len');
+      }
+
+      return classes.join(' ');
+    }
+
+    function renderRow(container, data, step, type) {
+      container.innerHTML = '';
+      data.forEach((value, idx) => {
+        const div = document.createElement('div');
+        div.className = cellClass(step, idx, type);
+        div.textContent = value;
+
+        if (type === 'pattern') {
+          if (idx === step.i && step.action !== 'done') {
+            const tag = document.createElement('div');
+            tag.className = 'arrow-tag';
+            tag.textContent = 'i';
+            div.appendChild(tag);
+          }
+          if (idx === step.len && step.action !== 'done') {
+            const tag2 = document.createElement('div');
+            tag2.className = 'arrow-tag';
+            tag2.style.top = '38px';
+            tag2.style.background = '#92400e';
+            tag2.textContent = 'len';
+            div.appendChild(tag2);
+          }
+        }
+
+        container.appendChild(div);
+      });
+    }
+
+    function renderSummary() {
+      summaryBody.innerHTML = '';
+      summaryRows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.sub}</td>
+          <td>${row.best}</td>
+          <td>${row.len}</td>
+        `;
+        summaryBody.appendChild(tr);
+      });
+    }
+
+    function renderStep() {
+      const step = steps[currentStep];
+      if (!step) return;
+
+      const idxData = step.pattern.map((_, i) => i);
+      const lpsData = step.lps.map(v => v === null ? '?' : v);
+
+      renderRow(indexRow, idxData, step, 'index');
+      renderRow(patternRow, step.pattern, step, 'pattern');
+      renderRow(lpsRow, lpsData, step, 'lps');
+
+      explainBox.innerHTML = step.text;
+      stepNow.textContent = `${currentStep + 1} / ${steps.length}`;
+      iNow.textContent = step.i ?? '-';
+      lenNow.textContent = step.len ?? '-';
+
+      const prefixNow = document.getElementById('prefixNow');
+      const suffixNow = document.getElementById('suffixNow');
+      const compareNow = document.getElementById('compareNow');
+      const compareFormula = document.getElementById('compareFormula');
+      const prefixVisual = document.getElementById('prefixVisual');
+      const suffixVisual = document.getElementById('suffixVisual');
+      const compareNote = document.getElementById('compareNote');
+      const dynamicINow = document.getElementById('dynamicINow');
+      const dynamicSubstring = document.getElementById('dynamicSubstring');
+      const dynamicPrefixList = document.getElementById('dynamicPrefixList');
+      const dynamicSuffixList = document.getElementById('dynamicSuffixList');
+      const dynamicBest = document.getElementById('dynamicBest');
+      const dynamicLpsNow = document.getElementById('dynamicLpsNow');
+
+      let prefix = '-';
+      let suffix = '-';
+      let result = '初始化';
+
+      prefixVisual.innerHTML = '';
+      suffixVisual.innerHTML = '';
+      dynamicPrefixList.innerHTML = '';
+      dynamicSuffixList.innerHTML = '';
+
+      function addMiniCell(container, ch, cls = '') {
+        const el = document.createElement('div');
+        el.className = `mini-cell ${cls}`.trim();
+        el.textContent = ch;
+        container.appendChild(el);
+      }
+
+      function renderList(container, items) {
+        container.innerHTML = '';
+        items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'dynamic-item';
+          div.textContent = item;
+          container.appendChild(div);
+        });
+      }
+
+      if (step.action === 'done') {
+        const finalStr = step.pattern.join('');
+        prefix = finalStr;
+        suffix = `[${step.lps.map(v => v === null ? '?' : v).join(', ')}]`;
+        result = '完成';
+        compareFormula.textContent = `最終 LPS = [${step.lps.join(', ')}]`;
+        step.pattern.forEach(ch => addMiniCell(prefixVisual, ch, 'same'));
+        step.pattern.forEach(ch => addMiniCell(suffixVisual, ch, 'same'));
+        compareNote.textContent = '綠色表示整個動畫已完成，最下方 lps 列就是最後答案。';
+
+        dynamicINow.textContent = `i = ${step.pattern.length - 1}`;
+        dynamicSubstring.textContent = finalStr;
+        renderList(dynamicPrefixList, buildProperPrefixes(finalStr));
+        renderList(dynamicSuffixList, buildProperSuffixes(finalStr));
+        dynamicBest.textContent = prefixSuffixInfo(finalStr).best || '無';
+        dynamicLpsNow.textContent = `LPS = [${step.lps.join(', ')}]`;
+      } else if (typeof step.i === 'number') {
+        const subArr = step.pattern.slice(0, step.i + 1);
+        const sub = subArr.join('');
+        const len = step.len || 0;
+        prefix = len > 0 ? sub.slice(0, len) : '∅';
+        suffix = len > 0 ? sub.slice(sub.length - len) : '∅';
+        const info = prefixSuffixInfo(sub);
+
+        if (step.action === 'match' || step.action === 'write') result = '相同';
+        else if (step.action === 'mismatch' || step.action === 'write-zero') result = '不同';
+        else if (step.action === 'fallback') result = '回跳後重比';
+        else if (step.action === 'compare') result = '準備比較';
+        else result = '初始化';
+
+        compareFormula.textContent = `目前子字串 pattern[0..${step.i}] = ${sub}
+prefix = ${prefix}
+suffix = ${suffix}`;
+
+        const n = subArr.length;
+        for (let idx = 0; idx < n; idx++) {
+          let pCls = 'dim';
+          let sCls = 'dim';
+
+          if (idx < len) pCls = 'same';
+          if (idx >= n - len) sCls = 'same';
+
+          if ((step.action === 'mismatch' || step.action === 'write-zero') && idx === step.compareB) pCls = 'diff';
+          if ((step.action === 'mismatch' || step.action === 'write-zero') && idx === step.compareA) sCls = 'diff';
+
+          if (step.action === 'compare') {
+            if (idx < len) pCls = 'same';
+            if (idx >= n - len) sCls = 'same';
+          }
+
+          addMiniCell(prefixVisual, subArr[idx], pCls);
+          addMiniCell(suffixVisual, subArr[idx], sCls);
+        }
+
+        if (len === 0) {
+          compareNote.textContent = '目前 len = 0，代表還沒有找到可延續的共同前後綴，所以 prefix / suffix 都是空集合。';
+        } else if (step.action === 'fallback') {
+          compareNote.textContent = '這一步正在回跳：原本較長的共同前後綴失敗，所以改用較短的候選長度重新比較。';
+        } else if (step.action === 'mismatch' || step.action === 'write-zero') {
+          compareNote.textContent = '紅色是這一步失敗的比較位置；如果 len 不能再縮，就把 lps[i] 填成 0。';
+        } else {
+          compareNote.textContent = '上下兩列的綠色區段就是目前正在對齊的前綴與後綴；綠色越長，代表共同前後綴越長。';
+        }
+
+        dynamicINow.textContent = `i = ${step.i}`;
+        dynamicSubstring.textContent = sub;
+        renderList(dynamicPrefixList, buildProperPrefixes(sub));
+        renderList(dynamicSuffixList, buildProperSuffixes(sub));
+        dynamicBest.textContent = info.best || '無';
+        dynamicLpsNow.textContent = step.lps[step.i] === null ? `LPS[${step.i}] = ?` : `LPS[${step.i}] = ${step.lps[step.i]}`;
+      }
+
+      prefixNow.textContent = prefix;
+      suffixNow.textContent = suffix;
+      compareNow.textContent = result;
+    }
+
+    function nextStep() {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        renderStep();
+      } else {
+        stopAuto();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        renderStep();
+      }
+    }
+
+    function resetSteps() {
+      currentStep = 0;
+      renderStep();
+      stopAuto();
+    }
+
+    function startAuto() {
+      stopAuto();
+      playBtn.textContent = '暫停';
+      timer = setInterval(() => {
+        if (currentStep >= steps.length - 1) {
+          stopAuto();
+          return;
+        }
+        nextStep();
+      }, Number(speedRange.value));
+    }
+
+    function stopAuto() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      playBtn.textContent = '自動播放';
+    }
+
+    function toggleAuto() {
+      if (timer) stopAuto();
+      else startAuto();
+    }
+
+    function rebuild() {
+      const pattern = sanitizePattern(patternInput.value);
+      patternInput.value = pattern;
+      buildAnimation(pattern);
+      renderSummary();
+      renderStep();
+    }
+
+    buildBtn.addEventListener('click', rebuild);
+    prevBtn.addEventListener('click', () => { stopAuto(); prevStep(); });
+    nextBtn.addEventListener('click', () => { stopAuto(); nextStep(); });
+    resetBtn.addEventListener('click', resetSteps);
+    playBtn.addEventListener('click', toggleAuto);
+    speedRange.addEventListener('input', () => {
+      speedText.textContent = `${speedRange.value} ms/步`;
+      if (timer) startAuto();
+    });
+    patternInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') rebuild();
+    });
+
+    rebuild();
+  </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Structures Reading 導覽頁</title>
+  <style>
+    :root{
+      --bg1:#0f172a;
+      --bg2:#1e293b;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --accent:#2563eb;
+      --accent2:#7c3aed;
+      --line:#e2e8f0;
+      --shadow:0 10px 30px rgba(15,23,42,.12);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:#fff;
+    }
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:40px 20px 80px;
+    }
+    .hero{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      border-radius:24px;
+      padding:28px;
+      box-shadow:0 12px 40px rgba(0,0,0,.18);
+      margin-bottom:28px;
+    }
+    h1{
+      margin:0 0 10px 0;
+      font-size:clamp(28px,4vw,42px);
+      line-height:1.15;
+    }
+    .subtitle{
+      margin:0;
+      color:#dbeafe;
+      line-height:1.7;
+      font-size:16px;
+    }
+    .toolbar{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+    .search{
+      flex:1 1 320px;
+      min-width:260px;
+      padding:12px 14px;
+      border:none;
+      border-radius:14px;
+      outline:none;
+      font-size:15px;
+    }
+    .count{
+      padding:12px 16px;
+      border-radius:14px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      font-size:14px;
+      color:#e2e8f0;
+    }
+    .section{
+      margin-top:24px;
+    }
+    .section-title{
+      font-size:22px;
+      margin:0 0 14px;
+      padding-left:12px;
+      border-left:5px solid #93c5fd;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:18px;
+    }
+    .card{
+      background:var(--card);
+      color:var(--text);
+      border-radius:22px;
+      padding:20px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 18px 40px rgba(15,23,42,.16);
+    }
+    .badge{
+      display:inline-block;
+      width:fit-content;
+      padding:6px 10px;
+      font-size:12px;
+      border-radius:999px;
+      color:#fff;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+    }
+    .title{
+      font-size:20px;
+      font-weight:700;
+      line-height:1.35;
+      margin:0;
+    }
+    .desc{
+      color:var(--muted);
+      line-height:1.7;
+      font-size:14px;
+      margin:0;
+      min-height:48px;
+    }
+    .url{
+      word-break:break-all;
+      font-size:13px;
+      color:#334155;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      border-radius:12px;
+      padding:10px 12px;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:auto;
+    }
+    .btn{
+      text-decoration:none;
+      padding:10px 14px;
+      border-radius:12px;
+      font-weight:600;
+      font-size:14px;
+      transition:.15s ease;
+      border:1px solid transparent;
+    }
+    .btn-primary{
+      background:var(--accent);
+      color:#fff;
+    }
+    .btn-primary:hover{filter:brightness(1.05)}
+    .btn-secondary{
+      background:#fff;
+      color:var(--accent);
+      border-color:#bfdbfe;
+    }
+    .btn-secondary:hover{
+      background:#eff6ff;
+    }
+    .footer{
+      margin-top:34px;
+      color:#cbd5e1;
+      font-size:14px;
+      text-align:center;
+    }
+    .hidden{display:none !important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Data Structures Reading 導覽頁</h1>
+      <p class="subtitle">
+        這個頁面整理了你提供的所有資料結構網址，包含歷屆 midterm、主題講義、PDF 與 HTML 補充筆記。
+        你可以直接點擊開啟，也可以用搜尋框快速找到目標。
+      </p>
+      <div class="toolbar">
+        <input id="searchBox" class="search" type="text" placeholder="搜尋：例如 Array、KMP、Stack、midterm、ADT..." />
+        <div id="countBox" class="count">共 15 筆連結</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">考古題 / Midterm</h2>
+      <div class="grid" id="midtermGrid">
+        <div class="card link-card" data-keywords="2023 midterm exam data structures">
+          <span class="badge">Midterm</span>
+          <h3 class="title">2023 Data Structures Midterm 1</h3>
+          <p class="desc">資料結構 2023 年期中考頁面。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/2023DataStructures_midterm1.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/2023DataStructures_midterm1.html" target="_blank">開啟連結</a>
+            <a class="btn btn-secondary" href="https://stevenkirbypeng.github.io/DataStructuresReading/2023DataStructures_midterm1.html" target="_blank">新分頁查看</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="2024 midterm exam data structures">
+          <span class="badge">Midterm</span>
+          <h3 class="title">2024 Data Structures Midterm 1</h3>
+          <p class="desc">資料結構 2024 年期中考頁面。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/2024DataStructures_midterm1.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/2024DataStructures_midterm1.html" target="_blank">開啟連結</a>
+            <a class="btn btn-secondary" href="https://stevenkirbypeng.github.io/DataStructuresReading/2024DataStructures_midterm1.html" target="_blank">新分頁查看</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="2025 midterm exam data structures">
+          <span class="badge">Midterm</span>
+          <h3 class="title">2025 Data Structures Midterm 1</h3>
+          <p class="desc">資料結構 2025 年期中考頁面。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/2025DataStructures_midterm1.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/2025DataStructures_midterm1.html" target="_blank">開啟連結</a>
+            <a class="btn btn-secondary" href="https://stevenkirbypeng.github.io/DataStructuresReading/2025DataStructures_midterm1.html" target="_blank">新分頁查看</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">主題整理頁面</h2>
+      <div class="grid">
+        <div class="card link-card" data-keywords="array data structures introduction">
+          <span class="badge">Topic</span>
+          <h3 class="title">DataStructures Array</h3>
+          <p class="desc">Array 主題說明頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/DataStructures_Array.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/DataStructures_Array.html" target="_blank">開啟連結</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="introduction basic concepts data structures">
+          <span class="badge">Topic</span>
+          <h3 class="title">DataStructures Introduction</h3>
+          <p class="desc">資料結構導論、基本觀念整理。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/DataStructures_Introduction.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/DataStructures_Introduction.html" target="_blank">開啟連結</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="stack queue stacks and queues">
+          <span class="badge">Topic</span>
+          <h3 class="title">Stack And Queue</h3>
+          <p class="desc">Stack 與 Queue 主題整理頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/StackAndQueue.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/StackAndQueue.html" target="_blank">開啟連結</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="big o big omega big theta complexity">
+          <span class="badge">Topic</span>
+          <h3 class="title">Big-O / Big-Ω / Big-Θ</h3>
+          <p class="desc">時間複雜度與漸進分析主題頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/Big-OBig-%CE%A9Big-%CE%98.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/Big-OBig-%CE%A9Big-%CE%98.html" target="_blank">開啟連結</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Lecture PDF</h2>
+      <div class="grid">
+        <div class="card link-card" data-keywords="array pdf lecture">
+          <span class="badge">PDF</span>
+          <h3 class="title">Array.pdf</h3>
+          <p class="desc">陣列講義 PDF。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/Array.pdf</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/Array.pdf" target="_blank">開啟 PDF</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="basic concepts pdf lecture">
+          <span class="badge">PDF</span>
+          <h3 class="title">BASIC CONCEPTS.pdf</h3>
+          <p class="desc">基本概念講義 PDF。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/BASIC%20CONCEPTS.pdf</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/BASIC%20CONCEPTS.pdf" target="_blank">開啟 PDF</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="linked lists pdf lecture">
+          <span class="badge">PDF</span>
+          <h3 class="title">LINKED LISTS.pdf</h3>
+          <p class="desc">鏈結串列講義 PDF。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/LINKED%20LISTS.pdf</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/LINKED%20LISTS.pdf" target="_blank">開啟 PDF</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="stacks and queues pdf lecture">
+          <span class="badge">PDF</span>
+          <h3 class="title">STACKS AND QUEUES.pdf</h3>
+          <p class="desc">堆疊與佇列講義 PDF。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/STACKS%20AND%20QUEUES.pdf</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/STACKS%20AND%20QUEUES.pdf" target="_blank">開啟 PDF</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">HTML 補充筆記</h2>
+      <div class="grid">
+        <div class="card link-card" data-keywords="adt c++ class html wolfpeng">
+          <span class="badge">HTML</span>
+          <h3 class="title">WolfPeng - ADT vs C++ class</h3>
+          <p class="desc">ADT 與 C++ class 比較說明頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20ADT%20vs%20C++%20class.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20ADT%20vs%20C++%20class.html" target="_blank">開啟 HTML</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="array linked list html wolfpeng">
+          <span class="badge">HTML</span>
+          <h3 class="title">WolfPeng - Array vs Linked List</h3>
+          <p class="desc">Array 與 Linked List 比較說明頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20Array%20vs%20Linked%20ListLinked%20List.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20Array%20vs%20Linked%20ListLinked%20List.html" target="_blank">開啟 HTML</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="stack queue template html wolfpeng c++">
+          <span class="badge">HTML</span>
+          <h3 class="title">WolfPeng - C++模板完整說明 Stack & Queue</h3>
+          <p class="desc">C++ 模板、Stack 與 Queue 補充整理頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20C++%E6%A8%A1%E6%9D%BF%E5%AE%8C%E6%95%B4%E8%AA%AA%E6%98%8EStack%20%26%20Queue.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20C++%E6%A8%A1%E6%9D%BF%E5%AE%8C%E6%95%B4%E8%AA%AA%E6%98%8EStack%20%26%20Queue.html" target="_blank">開啟 HTML</a>
+          </div>
+        </div>
+
+        <div class="card link-card" data-keywords="system life cycle html wolfpeng">
+          <span class="badge">HTML</span>
+          <h3 class="title">WolfPeng - System life cycle 說明</h3>
+          <p class="desc">System life cycle 說明頁。</p>
+          <div class="url">https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20System%20life%20cycle%20%E8%AA%AA%E6%98%8E.html</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://stevenkirbypeng.github.io/DataStructuresReading/midterm1/Lecture/html/WolfPeng%20-%20System%20life%20cycle%20%E8%AA%AA%E6%98%8E.html" target="_blank">開啟 HTML</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      製作完成：Data Structures Reading 導覽頁，可直接集中管理你提供的所有網址。
+    </div>
+  </div>
+
+  <script>
+    const searchBox = document.getElementById('searchBox');
+    const cards = Array.from(document.querySelectorAll('.link-card'));
+    const countBox = document.getElementById('countBox');
+
+    function applyFilter(){
+      const keyword = searchBox.value.trim().toLowerCase();
+      let shown = 0;
+
+      cards.forEach(card => {
+        const text = (card.innerText + ' ' + (card.dataset.keywords || '')).toLowerCase();
+        const match = text.includes(keyword);
+        card.classList.toggle('hidden', !match);
+        if(match) shown++;
+      });
+
+      countBox.textContent = `目前顯示 ${shown} / ${cards.length} 筆連結`;
+    }
+
+    searchBox.addEventListener('input', applyFilter);
+    applyFilter();
+  </script>
+</body>
+</html>
