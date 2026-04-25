@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HW2 Territory-Conquest Mini Game Animation Demo</title>
+  <style>
+    :root {
+      --bg: #f7f8fc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #111827;
+      --softline: #d1d5db;
+      --accent: #2563eb;
+      --ok: #16a34a;
+      --warn: #f59e0b;
+      --bad: #dc2626;
+      --owned: #bbf7d0;
+      --active: #fde68a;
+      --retired: #fecaca;
+      --new: #bfdbfe;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 24px auto;
+      padding: 0 16px 36px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    h1, h2, h3 { margin: 0 0 12px; }
+    h1 { font-size: 30px; }
+    h2 { font-size: 22px; }
+    h3 { font-size: 18px; }
+    p { margin: 8px 0; }
+
+    .muted { color: var(--muted); }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 13px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .mono {
+      font-family: Consolas, Monaco, monospace;
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .row3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 980px) {
+      .row, .row3 { grid-template-columns: 1fr; }
+    }
+
+    .inputRow, .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .inputGroup {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 300px;
+      min-width: 250px;
+    }
+
+    .inputGroup label {
+      min-width: 92px;
+      font-weight: 700;
+    }
+
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 15px;
+      background: #fff;
+      font-family: Consolas, "Microsoft JhengHei", monospace;
+    }
+
+    textarea {
+      min-height: 112px;
+      resize: vertical;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button.secondary { background: #475569; }
+    button.light { background: #e5e7eb; color: #111827; }
+    button.good { background: #16a34a; }
+    button.warn { background: #d97706; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    input[type="range"] { width: 180px; }
+
+    .speedBox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+
+    .boardWrap {
+      overflow: auto;
+      padding: 8px 0 4px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 0;
+      width: max-content;
+      margin: 0 auto;
+      background: #111827;
+      border: 3px solid #111827;
+    }
+
+    .cell {
+      width: 72px;
+      height: 72px;
+      background: #fff;
+      border-right: 1px solid #111827;
+      border-bottom: 1px solid #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-weight: 800;
+      font-size: 19px;
+      color: #475569;
+      transition: background .25s ease, transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+      user-select: none;
+    }
+
+    .cell.mergeNoRight { border-right-color: transparent; }
+    .cell.mergeNoBottom { border-bottom-color: transparent; }
+
+    .cell.owned {
+      background: var(--owned);
+      color: #166534;
+    }
+
+    .cell.active {
+      background: var(--active);
+      color: #92400e;
+      box-shadow: inset 0 0 0 4px rgba(245, 158, 11, .38);
+      z-index: 2;
+    }
+
+    .cell.newOwned {
+      background: var(--new);
+      color: #1e40af;
+      transform: translateY(-2px);
+      box-shadow: inset 0 0 0 4px rgba(37, 99, 235, .28);
+      z-index: 2;
+    }
+
+    .cell.retired {
+      background: var(--retired);
+      color: #991b1b;
+      box-shadow: inset 0 0 0 4px rgba(220, 38, 38, .25);
+      z-index: 2;
+    }
+
+    .cell.boundaryStay {
+      box-shadow: inset 0 0 0 4px rgba(217, 119, 6, .35);
+      background: #ffedd5;
+      color: #9a3412;
+      z-index: 2;
+    }
+
+    .cell .rootTag {
+      position: absolute;
+      bottom: 3px;
+      right: 5px;
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .cell .troop {
+      position: absolute;
+      top: 3px;
+      left: 5px;
+      font-size: 14px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .legendItem {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      font-size: 13px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid #94a3b8;
+    }
+
+    .stepBox {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .big {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .log {
+      max-height: 430px;
+      overflow: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fafafa;
+      font-size: 14px;
+    }
+
+    .logItem {
+      padding: 8px 10px;
+      border-bottom: 1px dashed #d1d5db;
+    }
+
+    .logItem:last-child { border-bottom: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th { background: #f9fafb; }
+
+    .warnText {
+      color: #b45309;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .summaryGrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 760px) {
+      .summaryGrid { grid-template-columns: 1fr 1fr; }
+      .cell { width: 54px; height: 54px; font-size: 16px; }
+    }
+
+    .stat {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat .num {
+      font-size: 22px;
+      font-weight: 900;
+      color: #1d4ed8;
+    }
+
+    .svgPreview {
+      width: 100%;
+      min-height: 220px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .smallBtn {
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>HW2 Territory-Conquest Mini Game 動畫展示</h1>
+      <p>
+        本頁參考作業一 KMP HTML 動畫的版型，改成 HW2 的 <span class="mono">merge + conquest + SVG</span> 互動展示。
+        你可以修改 <span class="mono">n</span>、merge 操作、起點與移動方向，再按「套用新題目」重新產生動畫。
+      </p>
+      <div>
+        <span class="pill">綠色：已征服</span>
+        <span class="pill">黃色：目前有兵可移動</span>
+        <span class="pill">藍色：本步新征服</span>
+        <span class="pill">紅色：回到已擁有而退休</span>
+        <span class="pill">橘色：越界停留</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>題目輸入區</h2>
+      <div class="inputRow">
+        <div class="inputGroup">
+          <label for="nInput">地圖大小 n</label>
+          <input id="nInput" type="number" min="2" max="12" value="5" />
+        </div>
+        <div class="inputGroup">
+          <label for="startInput">起點 Start</label>
+          <input id="startInput" type="number" min="1" value="4" />
+        </div>
+        <div class="inputGroup">
+          <label for="movesInput">移動 Moves</label>
+          <input id="movesInput" type="text" value="L U U R" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 12px;">
+        <div>
+          <h3>Merge 操作</h3>
+          <textarea id="mergeInput">3 8
+7 8
+11 12
+14 19</textarea>
+          <p class="muted">每行一組，例如 <span class="mono">3 8</span>。只允許上下左右相鄰，自己 merge 自己會視為 no-op。</p>
+        </div>
+        <div>
+          <h3>快速範例</h3>
+          <div class="controls">
+            <button id="loadEx1" class="light">載入 Example 1</button>
+            <button id="loadEx2" class="light">載入 Example 2</button>
+            <button id="applyBtn" class="good">套用新題目</button>
+          </div>
+          <p class="muted">Example 1 對應 benchmark1；Example 2 對應投影片頁面範例。</p>
+          <p id="inputWarn" class="warnText"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>控制區</h2>
+        <div class="controls">
+          <button id="playBtn">播放</button>
+          <button id="pauseBtn" class="secondary">暫停</button>
+          <button id="prevBtn" class="light">上一步</button>
+          <button id="nextBtn" class="light">下一步</button>
+          <button id="resetBtn" class="secondary">重新開始</button>
+          <button id="svgBtn" class="warn">產生 SVG</button>
+          <div class="speedBox">
+            <label for="speed">速度</label>
+            <input id="speed" type="range" min="300" max="2000" step="100" value="900">
+            <span id="speedText">900 ms</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>目前狀態</h2>
+        <div class="stepBox">
+          <div class="big" id="stepTitle">Step 0</div>
+          <p id="stepDesc">按下播放或下一步開始。</p>
+          <p>目前移動：<span id="moveVal" class="mono">尚未開始</span></p>
+          <p>已征服區域：<span id="ownedVal" class="mono">尚無</span></p>
+          <p>目前有兵區域：<span id="activeVal" class="mono">尚無</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>地圖動畫</h2>
+      <div class="boardWrap">
+        <div id="grid" class="grid"></div>
+      </div>
+
+      <div class="legend">
+        <span class="legendItem"><span class="swatch" style="background:#fff;"></span> 未征服</span>
+        <span class="legendItem"><span class="swatch" style="background:#bbf7d0;"></span> 已征服</span>
+        <span class="legendItem"><span class="swatch" style="background:#fde68a;"></span> 目前有兵</span>
+        <span class="legendItem"><span class="swatch" style="background:#bfdbfe;"></span> 本步新征服</span>
+        <span class="legendItem"><span class="swatch" style="background:#fecaca;"></span> 本步退休</span>
+        <span class="legendItem"><span class="swatch" style="background:#ffedd5;"></span> 越界停留</span>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div class="card">
+        <h2>統計資訊</h2>
+        <div class="summaryGrid">
+          <div class="stat">
+            <div class="muted">地圖大小</div>
+            <div class="num" id="statN">5×5</div>
+          </div>
+          <div class="stat">
+            <div class="muted">Merge 數</div>
+            <div class="num" id="statK">4</div>
+          </div>
+          <div class="stat">
+            <div class="muted">移動步數</div>
+            <div class="num" id="statP">4</div>
+          </div>
+          <div class="stat">
+            <div class="muted">征服格數</div>
+            <div class="num" id="statOwned">1</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:14px;">最後結果</h3>
+        <p>Count Owned：<span id="finalCount" class="mono">尚未完成</span></p>
+        <p>Owned Regions：<span id="finalOwned" class="mono">尚未完成</span></p>
+      </div>
+
+      <div class="card">
+        <h2>Merge / Union-Find 表</h2>
+        <p class="muted">root 相同代表屬於同一個 region。畫 SVG 時，root 相同的格子中間不畫線。</p>
+        <div style="max-height:360px; overflow:auto;">
+          <table>
+            <thead>
+              <tr><th>Cell</th><th>Root</th><th>Owned</th><th>Active</th></tr>
+            </thead>
+            <tbody id="ufTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>步驟紀錄</h2>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>SVG 輸出預覽</h2>
+      <p class="muted">
+        按「產生 SVG」後，下方會產生可下載的 SVG。這對應 HW2 要求的最後輸出圖檔。
+      </p>
+      <div class="controls">
+        <button id="downloadSvgBtn" class="secondary smallBtn" disabled>下載 SVG</button>
+      </div>
+      <div id="svgPreview" class="svgPreview">
+        尚未產生 SVG。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class DSU {
+      constructor(n) {
+        this.parent = Array.from({ length: n + 1 }, (_, i) => i);
+        this.size = Array(n + 1).fill(1);
+      }
+
+      find(x) {
+        if (this.parent[x] === x) return x;
+        this.parent[x] = this.find(this.parent[x]);
+        return this.parent[x];
+      }
+
+      union(a, b) {
+        let ra = this.find(a);
+        let rb = this.find(b);
+        if (ra === rb) return false;
+
+        if (this.size[ra] < this.size[rb]) {
+          [ra, rb] = [rb, ra];
+        }
+
+        this.parent[rb] = ra;
+        this.size[ra] += this.size[rb];
+        return true;
+      }
+    }
+
+    let n = 5;
+    let merges = [[3,8], [7,8], [11,12], [14,19]];
+    let start = 4;
+    let moves = ["L", "U", "U", "R"];
+
+    let dsu = null;
+    let steps = [];
+    let current = 0;
+    let timer = null;
+    let finalSvgText = "";
+
+    const grid = document.getElementById("grid");
+    const stepTitle = document.getElementById("stepTitle");
+    const stepDesc = document.getElementById("stepDesc");
+    const moveVal = document.getElementById("moveVal");
+    const ownedVal = document.getElementById("ownedVal");
+    const activeVal = document.getElementById("activeVal");
+    const log = document.getElementById("log");
+    const ufTable = document.getElementById("ufTable");
+    const inputWarn = document.getElementById("inputWarn");
+
+    const nInput = document.getElementById("nInput");
+    const startInput = document.getElementById("startInput");
+    const movesInput = document.getElementById("movesInput");
+    const mergeInput = document.getElementById("mergeInput");
+
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const applyBtn = document.getElementById("applyBtn");
+    const svgBtn = document.getElementById("svgBtn");
+    const downloadSvgBtn = document.getElementById("downloadSvgBtn");
+    const svgPreview = document.getElementById("svgPreview");
+
+    const speed = document.getElementById("speed");
+    const speedText = document.getElementById("speedText");
+
+    const statN = document.getElementById("statN");
+    const statK = document.getElementById("statK");
+    const statP = document.getElementById("statP");
+    const statOwned = document.getElementById("statOwned");
+    const finalCount = document.getElementById("finalCount");
+    const finalOwned = document.getElementById("finalOwned");
+
+    function idToRC(id) {
+      const row = Math.floor((id - 1) / n);
+      const col = (id - 1) % n;
+      return { row, col };
+    }
+
+    function rcToId(row, col) {
+      return row * n + col + 1;
+    }
+
+    function inBounds(row, col) {
+      return row >= 0 && row < n && col >= 0 && col < n;
+    }
+
+    function isAdjacentOrSame(a, b) {
+      const A = idToRC(a);
+      const B = idToRC(b);
+      return Math.abs(A.row - B.row) + Math.abs(A.col - B.col) <= 1;
+    }
+
+    function directionDelta(d) {
+      d = d.toUpperCase();
+      if (d === "U") return { dr: 1, dc: 0 };
+      if (d === "D") return { dr: -1, dc: 0 };
+      if (d === "L") return { dr: 0, dc: -1 };
+      if (d === "R") return { dr: 0, dc: 1 };
+      return { dr: 0, dc: 0 };
+    }
+
+    function cellsOfRoot(root) {
+      const out = [];
+      for (let id = 1; id <= n * n; id++) {
+        if (dsu.find(id) === root) out.push(id);
+      }
+      return out;
+    }
+
+    function sortedArray(setOrArray) {
+      return [...setOrArray].sort((a, b) => a - b);
+    }
+
+    function buildGame() {
+      dsu = new DSU(n * n);
+
+      const mergeLogs = [];
+      for (const [a, b] of merges) {
+        if (a < 1 || a > n * n || b < 1 || b > n * n) {
+          mergeLogs.push(`Merge (${a}, ${b}) 無效：編號超出範圍。`);
+          continue;
+        }
+
+        if (!isAdjacentOrSame(a, b)) {
+          mergeLogs.push(`Merge (${a}, ${b}) 無效：兩格不相鄰，忽略。`);
+          continue;
+        }
+
+        if (a === b) {
+          mergeLogs.push(`Merge (${a}, ${b})：自己 merge 自己，no-op。`);
+          continue;
+        }
+
+        const ok = dsu.union(a, b);
+        mergeLogs.push(`Merge (${a}, ${b})：${ok ? "合併成功" : "已在同一區，no-op"}。`);
+      }
+
+      const owned = new Set();
+      const active = new Set();
+      const retiredThisStep = new Set();
+      const newThisStep = new Set();
+      const stayThisStep = new Set();
+
+      const startRoot = dsu.find(start);
+      for (const id of cellsOfRoot(startRoot)) {
+        owned.add(id);
+        active.add(id);
+      }
+
+      steps = [];
+      steps.push({
+        title: "Initialization",
+        move: "-",
+        desc: `初始化完成。起點 ${start} 所在 region 被征服。${mergeLogs.join(" ")}`,
+        owned: new Set(owned),
+        active: new Set(active),
+        retired: new Set(),
+        newly: new Set(active),
+        stayed: new Set(),
+        log: [`初始化：n = ${n}，merge 次數 = ${merges.length}，start = ${start}。`, ...mergeLogs]
+      });
+
+      let currentActive = new Set(active);
+      let currentOwned = new Set(owned);
+
+      moves.forEach((mv, idx) => {
+        const { dr, dc } = directionDelta(mv);
+        const nextActive = new Set();
+        const nextOwned = new Set(currentOwned);
+        const newly = new Set();
+        const retired = new Set();
+        const stayed = new Set();
+        const localLog = [];
+
+        for (const cell of sortedArray(currentActive)) {
+          const { row, col } = idToRC(cell);
+          const nr = row + dr;
+          const nc = col + dc;
+
+          if (!inBounds(nr, nc)) {
+            nextActive.add(cell);
+            stayed.add(cell);
+            localLog.push(`${cell} 往 ${mv} 會越界，所以停在原地，下一步仍可行動。`);
+            continue;
+          }
+
+          const target = rcToId(nr, nc);
+          const targetRoot = dsu.find(target);
+          const regionCells = cellsOfRoot(targetRoot);
+          const alreadyOwned = regionCells.some(id => currentOwned.has(id));
+
+          if (alreadyOwned) {
+            retired.add(cell);
+            localLog.push(`${cell} → ${target}，但是目標 region 已經被擁有，所以此兵退休。`);
+            continue;
+          }
+
+          for (const id of regionCells) {
+            nextOwned.add(id);
+            newly.add(id);
+            nextActive.add(id);
+          }
+
+          localLog.push(`${cell} → ${target}，征服 region {${regionCells.join(", ")}}。`);
+        }
+
+        currentOwned = nextOwned;
+        currentActive = nextActive;
+
+        steps.push({
+          title: `Move ${idx + 1}`,
+          move: mv,
+          desc: `第 ${idx + 1} 步：往 ${mv} 移動。新征服 ${newly.size} 格，退休 ${retired.size} 支，越界停留 ${stayed.size} 支。`,
+          owned: new Set(currentOwned),
+          active: new Set(currentActive),
+          retired,
+          newly,
+          stayed,
+          log: localLog
+        });
+
+        if (currentActive.size === 0) {
+          steps.push({
+            title: "Game Over",
+            move: "-",
+            desc: `所有兵都退休，後續動作不再執行。`,
+            owned: new Set(currentOwned),
+            active: new Set(),
+            retired: new Set(),
+            newly: new Set(),
+            stayed: new Set(),
+            log: ["所有兵都已退休。"]
+          });
+        }
+      });
+    }
+
+    function cellClass(id, st) {
+      let cls = "cell";
+      const rightId = (id % n === 0) ? null : id + 1;
+      const belowId = (id <= n) ? null : id - n;
+
+      if (rightId && dsu.find(id) === dsu.find(rightId)) cls += " mergeNoRight";
+      if (belowId && dsu.find(id) === dsu.find(belowId)) cls += " mergeNoBottom";
+
+      if (st.owned.has(id)) cls += " owned";
+      if (st.newly.has(id)) cls += " newOwned";
+      if (st.retired.has(id)) cls += " retired";
+      if (st.stayed.has(id)) cls += " boundaryStay";
+      if (st.active.has(id)) cls += " active";
+
+      return cls;
+    }
+
+    function renderGrid(st) {
+      grid.innerHTML = "";
+      grid.style.gridTemplateColumns = `repeat(${n}, 72px)`;
+
+      for (let row = n - 1; row >= 0; row--) {
+        for (let col = 0; col < n; col++) {
+          const id = rcToId(row, col);
+          const div = document.createElement("div");
+          div.className = cellClass(id, st);
+
+          const troop = st.active.has(id) ? `<span class="troop">⚔️</span>` : "";
+          div.innerHTML = `${troop}<span>${id}</span><span class="rootTag">r${dsu.find(id)}</span>`;
+          grid.appendChild(div);
+        }
+      }
+    }
+
+    function renderUFTable(st) {
+      let html = "";
+      for (let id = 1; id <= n * n; id++) {
+        html += `<tr>
+          <td>${id}</td>
+          <td>${dsu.find(id)}</td>
+          <td>${st.owned.has(id) ? "Yes" : "No"}</td>
+          <td>${st.active.has(id) ? "Yes" : "No"}</td>
+        </tr>`;
+      }
+      ufTable.innerHTML = html;
+    }
+
+    function renderLog(stepIndex) {
+      log.innerHTML = "";
+      for (let i = 0; i <= stepIndex; i++) {
+        const item = document.createElement("div");
+        item.className = "logItem";
+        item.innerHTML = `<strong>Step ${i}｜${steps[i].title}</strong><br>${steps[i].desc}`;
+        if (steps[i].log.length) {
+          item.innerHTML += `<ul>${steps[i].log.map(x => `<li>${x}</li>`).join("")}</ul>`;
+        }
+        log.appendChild(item);
+      }
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function renderStep(i) {
+      const st = steps[i];
+      stepTitle.textContent = `Step ${i}｜${st.title}`;
+      stepDesc.textContent = st.desc;
+      moveVal.textContent = st.move;
+      ownedVal.textContent = sortedArray(st.owned).join(", ") || "尚無";
+      activeVal.textContent = sortedArray(st.active).join(", ") || "無";
+
+      statN.textContent = `${n}×${n}`;
+      statK.textContent = merges.length;
+      statP.textContent = moves.length;
+      statOwned.textContent = st.owned.size;
+
+      const finalStep = steps[steps.length - 1];
+      finalCount.textContent = finalStep.owned.size;
+      finalOwned.textContent = sortedArray(finalStep.owned).join(", ");
+
+      renderGrid(st);
+      renderUFTable(st);
+      renderLog(i);
+    }
+
+    function nextStep() {
+      if (current < steps.length - 1) {
+        current++;
+        renderStep(current);
+      } else {
+        pause();
+      }
+    }
+
+    function prevStep() {
+      if (current > 0) {
+        current--;
+        renderStep(current);
+      }
+    }
+
+    function play() {
+      pause();
+      timer = setInterval(() => {
+        if (current >= steps.length - 1) {
+          pause();
+          return;
+        }
+        nextStep();
+      }, Number(speed.value));
+    }
+
+    function pause() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function reset() {
+      pause();
+      current = 0;
+      renderStep(current);
+    }
+
+    function parseInputs() {
+      const newN = Number(nInput.value);
+      const newStart = Number(startInput.value);
+
+      const newMerges = mergeInput.value
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => line.split(/\s+/).map(Number))
+        .filter(pair => pair.length >= 2 && Number.isFinite(pair[0]) && Number.isFinite(pair[1]))
+        .map(pair => [pair[0], pair[1]]);
+
+      const newMoves = movesInput.value
+        .trim()
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map(x => x.toUpperCase())
+        .filter(x => ["U", "D", "L", "R"].includes(x));
+
+      if (!Number.isInteger(newN) || newN < 2 || newN > 12) {
+        throw new Error("n 必須是 2 到 12 之間的整數。");
+      }
+
+      if (!Number.isInteger(newStart) || newStart < 1 || newStart > newN * newN) {
+        throw new Error(`Start 必須介於 1 到 ${newN * newN}。`);
+      }
+
+      if (newMoves.length === 0) {
+        throw new Error("Moves 至少要有一個方向，且只能使用 U/D/L/R。");
+      }
+
+      n = newN;
+      start = newStart;
+      merges = newMerges;
+      moves = newMoves;
+    }
+
+    function applyNewProblem() {
+      try {
+        pause();
+        parseInputs();
+        inputWarn.textContent = "";
+        buildGame();
+        current = 0;
+        renderStep(0);
+        svgPreview.textContent = "尚未產生 SVG。";
+        downloadSvgBtn.disabled = true;
+      } catch (err) {
+        inputWarn.textContent = err.message;
+      }
+    }
+
+    function loadExample1() {
+      nInput.value = 5;
+      mergeInput.value = "3 8\n7 8\n11 12\n14 19";
+      startInput.value = 4;
+      movesInput.value = "L U U R";
+      applyNewProblem();
+    }
+
+    function loadExample2() {
+      nInput.value = 6;
+      mergeInput.value = "7 8\n13 19\n7 13\n9 10\n4 5\n5 6\n6 12\n12 18";
+      startInput.value = 7;
+      movesInput.value = "R D U R L";
+      applyNewProblem();
+    }
+
+    function generateSVGText() {
+      const finalStep = steps[steps.length - 1];
+      const cell = 70;
+      const margin = 40;
+      const titleH = 40;
+      const width = n * cell + margin * 2;
+      const height = n * cell + margin * 2 + titleH;
+
+      let svg = "";
+      svg += `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">\n`;
+      svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="white"/>\n`;
+      svg += `<text x="${width/2}" y="28" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#111827">HW2 Territory-Conquest Result</text>\n`;
+
+      for (let row = n - 1; row >= 0; row--) {
+        for (let col = 0; col < n; col++) {
+          const id = rcToId(row, col);
+          const x = margin + col * cell;
+          const y = margin + titleH + (n - 1 - row) * cell;
+          const fill = finalStep.owned.has(id) ? "#bbf7d0" : "#ffffff";
+          svg += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${fill}" stroke="none"/>\n`;
+        }
+      }
+
+      svg += `<rect x="${margin}" y="${margin + titleH}" width="${n*cell}" height="${n*cell}" fill="none" stroke="black" stroke-width="3"/>\n`;
+
+      for (let row = n - 1; row >= 0; row--) {
+        for (let col = 0; col < n; col++) {
+          const id = rcToId(row, col);
+          const x = margin + col * cell;
+          const y = margin + titleH + (n - 1 - row) * cell;
+
+          if (col + 1 < n) {
+            const right = rcToId(row, col + 1);
+            if (dsu.find(id) !== dsu.find(right)) {
+              svg += `<line x1="${x + cell}" y1="${y}" x2="${x + cell}" y2="${y + cell}" stroke="black" stroke-width="2"/>\n`;
+            }
+          }
+
+          if (row + 1 < n) {
+            const up = rcToId(row + 1, col);
+            if (dsu.find(id) !== dsu.find(up)) {
+              svg += `<line x1="${x}" y1="${y}" x2="${x + cell}" y2="${y}" stroke="black" stroke-width="2"/>\n`;
+            }
+          }
+        }
+      }
+
+      for (let row = n - 1; row >= 0; row--) {
+        for (let col = 0; col < n; col++) {
+          const id = rcToId(row, col);
+          const x = margin + col * cell + cell / 2;
+          const y = margin + titleH + (n - 1 - row) * cell + cell / 2;
+          const fill = finalStep.owned.has(id) ? "#166534" : "#6b7280";
+          const weight = finalStep.owned.has(id) ? "bold" : "normal";
+          svg += `<text x="${x}" y="${y}" font-family="Arial" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="${fill}" font-weight="${weight}">${id}</text>\n`;
+        }
+      }
+
+      svg += `</svg>\n`;
+      return svg;
+    }
+
+    function makeSVG() {
+      finalSvgText = generateSVGText();
+      svgPreview.innerHTML = finalSvgText;
+      downloadSvgBtn.disabled = false;
+    }
+
+    function downloadSVG() {
+      if (!finalSvgText) return;
+      const blob = new Blob([finalSvgText], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "hw2_result.svg";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    playBtn.addEventListener("click", play);
+    pauseBtn.addEventListener("click", pause);
+    nextBtn.addEventListener("click", nextStep);
+    prevBtn.addEventListener("click", prevStep);
+    resetBtn.addEventListener("click", reset);
+    applyBtn.addEventListener("click", applyNewProblem);
+    svgBtn.addEventListener("click", makeSVG);
+    downloadSvgBtn.addEventListener("click", downloadSVG);
+
+    document.getElementById("loadEx1").addEventListener("click", loadExample1);
+    document.getElementById("loadEx2").addEventListener("click", loadExample2);
+
+    speed.addEventListener("input", () => {
+      speedText.textContent = `${speed.value} ms`;
+      if (timer) play();
+    });
+
+    buildGame();
+    renderStep(0);
+  </script>
+</body>
+</html>
