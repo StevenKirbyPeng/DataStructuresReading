@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HW2 Territory Conquest Mini Game 進階報告</title>
+<style>
+body{margin:0;background:#f5f7fb;color:#1f2937;font-family:"Segoe UI","Microsoft JhengHei",Arial,sans-serif;line-height:1.75}
+.page{max-width:1180px;margin:0 auto;padding:28px 18px 56px}
+.cover,.card{background:white;border:1px solid #e5e7eb;border-radius:22px;padding:26px;margin-bottom:20px;box-shadow:0 10px 26px rgba(15,23,42,.06)}
+.cover{background:linear-gradient(135deg,#eff6ff,#fff 50%,#ecfdf5)}
+h1{font-size:34px;margin:0 0 12px;color:#0f172a}
+h2{font-size:25px;margin:0 0 14px;padding-left:12px;border-left:7px solid #2563eb}
+h3{font-size:20px;margin:20px 0 10px}
+p{margin:8px 0}.muted{color:#6b7280}
+.pill{display:inline-block;padding:5px 11px;border-radius:999px;background:#eff6ff;color:#1d4ed8;border:1px solid #dbeafe;margin:5px 6px 5px 0;font-size:13px}
+.note{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;margin:12px 0}
+.good{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.mono{font-family:Consolas,Monaco,monospace;background:#f3f4f6;padding:2px 6px;border-radius:6px}
+.toc a{display:inline-block;margin:4px 12px 4px 0;color:#1d4ed8;text-decoration:none;font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.figure{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px;margin:14px 0;overflow-x:auto}
+.caption{text-align:center;color:#6b7280;font-size:14px;margin-top:8px}
+table{width:100%;border-collapse:collapse;margin:14px 0;background:white;font-size:15px}
+th,td{border:1px solid #e5e7eb;padding:10px;text-align:center;vertical-align:middle}
+th{background:#f8fafc}
+.pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;border-radius:16px;padding:18px;overflow-x:auto;font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.65}
+.map{display:grid;gap:0;width:max-content;margin:8px auto;border:3px solid #111827;background:#111827}
+.cell{width:58px;height:58px;background:#fff;border-right:1px solid #111827;border-bottom:1px solid #111827;display:flex;align-items:center;justify-content:center;font-weight:800;position:relative;color:#475569}
+.owned{background:#bbf7d0;color:#166534}.active{background:#fde68a;color:#92400e;box-shadow:inset 0 0 0 4px rgba(245,158,11,.35)}
+.new{background:#bfdbfe;color:#1e40af}.retire{background:#fecaca;color:#991b1b}.stay{background:#ffedd5;color:#9a3412}
+.mr{border-right-color:transparent}.mb{border-bottom-color:transparent}.mark{position:absolute;top:3px;left:5px;font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.legendItem{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f8fafc;font-size:13px}
+.swatch{width:16px;height:16px;border-radius:4px;border:1px solid #94a3b8}
+.flow{width:100%;min-width:760px;height:auto}
+@media print{body{background:white}.page{max-width:none;padding:0}.card,.cover{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="page">
+<section class="cover">
+<h1>HW2 Territory Conquest Mini Game 進階報告</h1>
+<p class="muted">完整遊戲手冊、流程圖、每個過程示意圖片、演算法偽碼、Trace 表與 SVG 輸出說明</p>
+<span class="pill">Union Find</span><span class="pill">Grid Simulation</span><span class="pill">SVG Visualization</span><span class="pill">Data Structures HW2</span>
+<p class="muted">本 HTML 可直接用瀏覽器開啟，也可列印成 PDF 作為報告版本。</p>
+</section>
+
+<section class="card toc">
+<h2>目錄</h2>
+<a href="#intro">一、作業目的</a>
+<a href="#rules">二、遊戲規則</a>
+<a href="#flow">三、完整流程</a>
+<a href="#manual">四、遊戲手冊</a>
+<a href="#example">五、Example 1 圖解</a>
+<a href="#algorithm">六、演算法設計</a>
+<a href="#svg">七、SVG 輸出</a>
+<a href="#complexity">八、複雜度分析</a>
+<a href="#conclusion">九、結論</a>
+</section>
+
+<section id="intro" class="card">
+<h2>一、作業目的</h2>
+<p>HW2 Territory Conquest Mini Game 是一個以二維地圖為基礎的領土征服模擬作業。玩家先建立一張 n 乘 n 的地圖，再根據輸入的 merge 操作將相鄰格子合併成較大的 region。接著，玩家選擇一個起始格子作為初始領土，並依照方向指令讓兵向上、下、左、右移動。每一步移動可能造成新區域被征服、兵停在邊界，或兵因走回已征服區域而退休。最後，系統會將結果輸出成 SVG 圖檔。</p>
+<p>本作業的核心學習目標在於將資料結構與模擬流程整合。區域合併部分適合使用 Union Find 管理不同格子是否屬於同一集合；移動模擬部分則需要透過 active 與 owned 狀態追蹤目前仍能移動的兵與已被征服的地區。透過此作業，學生可以練習輸入解析、資料結構設計、狀態更新、流程控制與圖形化輸出。</p>
+<div class="note good">重點概念是先用 Union Find 建立靜態 region，再用 Simulation 模擬動態 conquest，最後用 SVG 呈現 final map。</div>
+</section>
+
+<section id="rules" class="card">
+<h2>二、完整遊戲規則</h2>
+<h3>(一) 地圖編號規則</h3>
+<p>地圖為 n 乘 n 方格。編號方式為由下往上、由左至右。以 n 等於 5 為例，左下角為 1，右下角為 5，最上排為 21 到 25。</p>
+<div class="figure">
+<div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell">16</div><div class="cell">17</div><div class="cell">18</div><div class="cell">19</div><div class="cell">20</div>
+<div class="cell">11</div><div class="cell">12</div><div class="cell">13</div><div class="cell">14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell">7</div><div class="cell">8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell">3</div><div class="cell">4</div><div class="cell">5</div>
+</div>
+<div class="caption">圖一 5 × 5 地圖編號方式</div>
+</div>
+
+<h3>(二) Merge 規則</h3>
+<p>Merge 表示將兩個相鄰格子合併成同一個 region。若兩格上下或左右相鄰，則可以合併；若是斜對角或距離大於一，則不應合併。若一個格子與自己合併，視為 no-op。</p>
+<div class="figure">
+<div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell">16</div><div class="cell">17</div><div class="cell">18</div><div class="cell">19</div><div class="cell">20</div>
+<div class="cell">11</div><div class="cell">12</div><div class="cell">13</div><div class="cell">14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell owned mr">7</div><div class="cell owned">8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell owned">3</div><div class="cell">4</div><div class="cell">5</div>
+</div>
+<div class="caption">圖二 Merge 後，3、7、8 屬於同一個 region</div>
+</div>
+
+<h3>(三) Conquest 移動規則</h3>
+<table>
+<thead><tr><th>情況</th><th>規則</th><th>下一步狀態</th></tr></thead>
+<tbody>
+<tr><td>移動越界</td><td>兵無法離開地圖</td><td>停在原地，仍然 active</td></tr>
+<tr><td>移動到已征服 region</td><td>兵回到 owned 區域</td><td>該兵退休，不再 active</td></tr>
+<tr><td>移動到未征服 region</td><td>整個 region 被征服</td><td>該 region 全部 cell 變成 active</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="flow" class="card">
+<h2>三、整體流程圖</h2>
+<p>整個系統可以分成輸入、初始化、合併、模擬、輸出五個主要階段。下圖呈現 HW2 程式執行的完整流程。</p>
+<div class="figure">
+<svg class="flow" viewBox="0 0 1100 430" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/></marker></defs>
+<rect x="40" y="40" width="180" height="70" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="130" y="70" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e3a8a">讀取輸入</text><text x="130" y="94" text-anchor="middle" font-size="13" fill="#475569">n, k, merges, start, moves</text>
+<rect x="280" y="40" width="180" height="70" rx="16" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="370" y="70" text-anchor="middle" font-size="18" font-weight="bold" fill="#166534">建立地圖</text><text x="370" y="94" text-anchor="middle" font-size="13" fill="#475569">建立 n × n cells</text>
+<rect x="520" y="40" width="180" height="70" rx="16" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/><text x="610" y="70" text-anchor="middle" font-size="18" font-weight="bold" fill="#581c87">Union Find</text><text x="610" y="94" text-anchor="middle" font-size="13" fill="#475569">合併相鄰 regions</text>
+<rect x="760" y="40" width="180" height="70" rx="16" fill="#fff7ed" stroke="#f59e0b" stroke-width="2"/><text x="850" y="70" text-anchor="middle" font-size="18" font-weight="bold" fill="#92400e">設定起點</text><text x="850" y="94" text-anchor="middle" font-size="13" fill="#475569">owned 與 active 初始化</text>
+<line x1="220" y1="75" x2="280" y2="75" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/><line x1="460" y1="75" x2="520" y2="75" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/><line x1="700" y1="75" x2="760" y2="75" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="320" y="190" width="220" height="86" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="430" y="224" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e3a8a">逐步移動</text><text x="430" y="250" text-anchor="middle" font-size="13" fill="#475569">對每個 active cell 移動</text>
+<rect x="600" y="180" width="250" height="110" rx="16" fill="#ffffff" stroke="#111827" stroke-width="2"/><text x="725" y="212" text-anchor="middle" font-size="18" font-weight="bold" fill="#111827">判斷移動結果</text><text x="725" y="238" text-anchor="middle" font-size="13" fill="#475569">越界 停留</text><text x="725" y="260" text-anchor="middle" font-size="13" fill="#475569">已征服 退休</text><text x="725" y="282" text-anchor="middle" font-size="13" fill="#475569">新 region 征服</text>
+<line x1="850" y1="110" x2="430" y2="190" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/><line x1="540" y1="233" x2="600" y2="233" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M850 235 C970 235 970 335 725 335 C500 335 500 276 500 276" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/><text x="865" y="332" font-size="13" fill="#475569">還有 moves 且 active 不為空</text>
+<rect x="430" y="345" width="240" height="62" rx="16" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="550" y="374" text-anchor="middle" font-size="18" font-weight="bold" fill="#166534">輸出 SVG</text><text x="550" y="396" text-anchor="middle" font-size="13" fill="#475569">final map visualization</text>
+<line x1="725" y1="290" x2="610" y2="345" stroke="#16a34a" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>
+<div class="caption">圖三 HW2 程式整體流程圖</div>
+</div>
+</section>
+
+<section id="manual" class="card">
+<h2>四、遊戲操作手冊</h2>
+<h3>(一) 輸入格式</h3>
+<div class="pre">n
+k
+merge_a1 merge_b1
+merge_a2 merge_b2
+...
+merge_ak merge_bk
+start
+p
+direction_1 direction_2 ... direction_p</div>
+<h3>(二) Example 1 輸入</h3>
+<div class="pre">5
+4
+3 8
+7 8
+11 12
+14 19
+4
+4
+L U U R</div>
+<h3>(三) 操作流程</h3>
+<table>
+<thead><tr><th>順序</th><th>操作</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>輸入 n</td><td>建立 n × n 地圖</td></tr>
+<tr><td>2</td><td>輸入 k 與 k 組 merge</td><td>將相鄰格子合併為同一 region</td></tr>
+<tr><td>3</td><td>輸入 start</td><td>設定初始征服 region</td></tr>
+<tr><td>4</td><td>輸入 p 與方向</td><td>依序模擬每一步移動</td></tr>
+<tr><td>5</td><td>輸出 SVG</td><td>產生 final map 圖檔</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="example" class="card">
+<h2>五、Example 1 完整圖解</h2>
+<p>Example 1 使用 n 等於 5，merge 為 3 8、7 8、11 12、14 19，起點為 4，移動方向為 L U U R。</p>
+<div class="legend">
+<span class="legendItem"><span class="swatch" style="background:white"></span>未征服</span>
+<span class="legendItem"><span class="swatch" style="background:#bbf7d0"></span>已征服</span>
+<span class="legendItem"><span class="swatch" style="background:#fde68a"></span>目前 active</span>
+<span class="legendItem"><span class="swatch" style="background:#bfdbfe"></span>本步新征服</span>
+<span class="legendItem"><span class="swatch" style="background:#fecaca"></span>退休</span>
+</div>
+
+<h3>(一) 初始化後</h3>
+<p>起點為 4，所以 4 先被征服，並且 4 是目前唯一 active cell。</p>
+<div class="figure"><div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell">16</div><div class="cell">17</div><div class="cell">18</div><div class="cell">19</div><div class="cell">20</div>
+<div class="cell">11</div><div class="cell">12</div><div class="cell">13</div><div class="cell">14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell">7</div><div class="cell">8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell">3</div><div class="cell active"><span class="mark">兵</span>4</div><div class="cell">5</div>
+</div><div class="caption">圖四 初始化 起點 4 被征服且成為 active</div></div>
+
+<h3>(二) Step 1 L</h3>
+<p>4 往左到 3。因為 3、7、8 已經透過 merge 屬於同一 region，所以征服 3 時會連同 7 與 8 一起征服。</p>
+<div class="figure"><div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell">16</div><div class="cell">17</div><div class="cell">18</div><div class="cell">19</div><div class="cell">20</div>
+<div class="cell">11</div><div class="cell">12</div><div class="cell">13</div><div class="cell">14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell new mr"><span class="mark">兵</span>7</div><div class="cell new"><span class="mark">兵</span>8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell new"><span class="mark">兵</span>3</div><div class="cell owned">4</div><div class="cell">5</div>
+</div><div class="caption">圖五 Step 1 往左，3 所在 region 3、7、8 全部被征服</div></div>
+
+<h3>(三) Step 2 U</h3>
+<p>active 為 3、7、8。往上時，3 會到 8，但 8 已經被征服，所以該兵退休。7 到 12，因為 11 與 12 同 region，所以征服 11、12。8 到 13，所以征服 13。</p>
+<div class="figure"><div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell">16</div><div class="cell">17</div><div class="cell">18</div><div class="cell">19</div><div class="cell">20</div>
+<div class="cell new mr"><span class="mark">兵</span>11</div><div class="cell new"><span class="mark">兵</span>12</div><div class="cell new"><span class="mark">兵</span>13</div><div class="cell">14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell owned mr">7</div><div class="cell owned">8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell retire">3</div><div class="cell owned">4</div><div class="cell">5</div>
+</div><div class="caption">圖六 Step 2 往上，3 的兵退休，11、12、13 被征服</div></div>
+
+<h3>(四) Step 3 U</h3>
+<p>active 為 11、12、13。往上後，分別征服 16、17、18。</p>
+<div class="figure"><div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell new"><span class="mark">兵</span>16</div><div class="cell new"><span class="mark">兵</span>17</div><div class="cell new"><span class="mark">兵</span>18</div><div class="cell">19</div><div class="cell">20</div>
+<div class="cell owned mr">11</div><div class="cell owned">12</div><div class="cell owned">13</div><div class="cell">14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell owned mr">7</div><div class="cell owned">8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell owned">3</div><div class="cell owned">4</div><div class="cell">5</div>
+</div><div class="caption">圖七 Step 3 往上，16、17、18 被征服</div></div>
+
+<h3>(五) Step 4 R</h3>
+<p>active 為 16、17、18。16 往右到 17，17 往右到 18，兩者都已被征服，所以兵退休。18 往右到 19，而 19 與 14 同 region，因此征服 14、19。</p>
+<div class="figure"><div class="map" style="grid-template-columns:repeat(5,58px)">
+<div class="cell">21</div><div class="cell">22</div><div class="cell">23</div><div class="cell">24</div><div class="cell">25</div>
+<div class="cell retire">16</div><div class="cell retire">17</div><div class="cell owned">18</div><div class="cell new"><span class="mark">兵</span>19</div><div class="cell">20</div>
+<div class="cell owned mr">11</div><div class="cell owned">12</div><div class="cell owned">13</div><div class="cell new"><span class="mark">兵</span>14</div><div class="cell">15</div>
+<div class="cell">6</div><div class="cell owned mr">7</div><div class="cell owned">8</div><div class="cell">9</div><div class="cell">10</div>
+<div class="cell">1</div><div class="cell">2</div><div class="cell owned">3</div><div class="cell owned">4</div><div class="cell">5</div>
+</div><div class="caption">圖八 Step 4 往右，18 征服 19 所在 region，因此 14、19 被征服</div></div>
+
+<h3>(六) Example 1 Trace 表</h3>
+<table>
+<thead><tr><th>Step</th><th>Move</th><th>Active Before</th><th>重要事件</th><th>Owned After</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Start</td><td>4</td><td>起點 4 被征服</td><td>4</td></tr>
+<tr><td>1</td><td>L</td><td>4</td><td>4 到 3，征服 region 3、7、8</td><td>3、4、7、8</td></tr>
+<tr><td>2</td><td>U</td><td>3、7、8</td><td>3 到 8 退休，7 到 12 征服 11、12，8 到 13</td><td>3、4、7、8、11、12、13</td></tr>
+<tr><td>3</td><td>U</td><td>11、12、13</td><td>征服 16、17、18</td><td>3、4、7、8、11、12、13、16、17、18</td></tr>
+<tr><td>4</td><td>R</td><td>16、17、18</td><td>16、17 退休，18 到 19 征服 14、19</td><td>3、4、7、8、11、12、13、14、16、17、18、19</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="algorithm" class="card">
+<h2>六、演算法設計</h2>
+<h3>(一) Union Find 偽碼</h3>
+<div class="pre">find(x):
+    if parent[x] == x:
+        return x
+    parent[x] = find(parent[x])
+    return parent[x]
+
+union(a, b):
+    ra = find(a)
+    rb = find(b)
+    if ra == rb:
+        return
+    parent[rb] = ra</div>
+
+<h3>(二) 移動模擬偽碼</h3>
+<div class="pre">owned = start region
+active = all cells in start region
+
+for each direction d:
+    nextActive = empty
+
+    for each cell in active:
+        target = move(cell, d)
+
+        if target is out of bounds:
+            nextActive.add(cell)
+
+        else if target region is already owned:
+            retire this troop
+
+        else:
+            conquer whole target region
+            nextActive.add(all cells in target region)
+
+    active = nextActive
+
+    if active is empty:
+        stop simulation</div>
+
+<h3>(三) 狀態集合說明</h3>
+<table>
+<thead><tr><th>集合名稱</th><th>意義</th><th>更新時機</th></tr></thead>
+<tbody>
+<tr><td>owned</td><td>已被征服的 cell 或 region</td><td>進入新 region 時更新</td></tr>
+<tr><td>active</td><td>本回合可以移動的兵所在 cell</td><td>每一步結束後更新</td></tr>
+<tr><td>retired</td><td>走回已征服區域而停止的兵</td><td>移動到 owned region 時產生</td></tr>
+<tr><td>stayed</td><td>因越界而停留的兵</td><td>移動超出地圖時產生</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="svg" class="card">
+<h2>七、SVG 輸出設計</h2>
+<p>SVG 是文字形式的向量圖，可以用 C++ 的 ofstream 產生，也可以直接使用瀏覽器開啟。輸出流程包含背景、格子填色、外框、不同 region 間的邊界，以及每格原始編號。</p>
+<h3>(一) SVG 繪製流程</h3>
+<div class="pre">1 畫白色背景
+2 依照 owned 狀態填入每個 cell 的顏色
+3 畫出整張 board 的外框
+4 檢查每格右方與上方鄰居
+5 若 root 不同則畫 boundary line
+6 在每格中央畫出原始編號</div>
+<div class="note good">同一 region 內部不畫分隔線，不同 region 之間才畫 boundary line，這是 SVG 輸出最重要的判斷。</div>
+</section>
+
+<section id="complexity" class="card">
+<h2>八、複雜度分析</h2>
+<table>
+<thead><tr><th>階段</th><th>主要操作</th><th>時間複雜度</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>Initialization</td><td>建立 n × n 地圖</td><td>O n 平方</td><td>需要初始化所有 cell</td></tr>
+<tr><td>Merge</td><td>Union Find 合併</td><td>O k α n</td><td>α n 為反阿克曼函數，實務上接近常數</td></tr>
+<tr><td>Simulation</td><td>依 p 步方向移動</td><td>最壞 O p n 平方</td><td>每一步可能需檢查許多 active cells</td></tr>
+<tr><td>SVG Output</td><td>畫格子、邊界、文字</td><td>O n 平方</td><td>每個 cell 至少處理一次</td></tr>
+</tbody>
+</table>
+<div class="note">整體時間複雜度可視為 O n 平方 加上 O k α n 加上 O p n 平方。若 active cells 數量較少，實際執行時間會更快。</div>
+</section>
+
+<section id="conclusion" class="card">
+<h2>九、結論</h2>
+<p>本作業透過 Territory Conquest Mini Game 將資料結構與演算法整合成一個完整系統。Union Find 負責處理 region 合併，使多個格子可以被視為同一區域；simulation 負責處理動態征服流程，使每一步移動都能依照規則更新 active、owned、retired 與 stayed 狀態；SVG 則負責將最後結果視覺化，使使用者能清楚觀察征服結果與區域邊界。</p>
+<p>透過本作業，學生不僅能熟悉 Union Find 的實際用途，也能學會如何將抽象資料結構應用於遊戲規則與圖形輸出中。整體而言，此作業具有良好的學習價值，能有效訓練問題分析、演算法設計、程式實作與結果呈現能力。</p>
+</section>
+</div>
+</body>
+</html>
