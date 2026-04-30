@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>影片平均切割工具｜GitHub Pages 版</title>
+  <style>
+    :root{--bg:#eef4ff;--card:#fff;--ink:#102a4c;--muted:#60708a;--pri:#255fd6;--pri2:#6b8cff;--ok:#16a34a;--warn:#b45309;--bad:#dc2626;--line:#d8e3f5}
+    *{box-sizing:border-box}body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;background:linear-gradient(135deg,#eef4ff,#f7fbff);color:var(--ink);line-height:1.75}
+    .wrap{max-width:1180px;margin:0 auto;padding:28px 18px 48px}.hero{border-radius:28px;padding:34px;background:linear-gradient(135deg,#092047,#1d5bd8 58%,#37b981);color:white;box-shadow:0 22px 60px rgba(16,42,76,.18)}
+    h1{margin:0 0 10px;font-size:clamp(28px,4vw,46px)}.hero p{margin:0;opacity:.92;font-size:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:0 14px 38px rgba(16,42,76,.08)}
+    h2{margin:0 0 14px;font-size:25px}.drop{border:2px dashed #aac0e6;border-radius:22px;padding:30px;text-align:center;background:#f8fbff;transition:.2s;cursor:pointer}.drop.drag{background:#e8f0ff;border-color:var(--pri)}
+    input[type=file]{display:none}.controls{display:grid;gap:14px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}label{font-weight:800}input[type=number],select{border:1px solid #cbd8ee;border-radius:14px;padding:12px 14px;font-size:16px;background:white;color:var(--ink)}
+    button,a.btn{border:0;border-radius:16px;padding:12px 18px;font-size:16px;font-weight:900;cursor:pointer;background:linear-gradient(135deg,var(--pri),var(--pri2));color:white;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 12px 26px rgba(37,95,214,.22)}button:disabled{opacity:.5;cursor:not-allowed}.ghost{background:#eef4ff;color:var(--pri);box-shadow:none;border:1px solid #cbd8ee}
+    .log{min-height:80px;background:#071426;color:#dceafe;border-radius:18px;padding:16px;white-space:pre-wrap;overflow:auto;font-family:Consolas,monospace}.bar{height:16px;background:#dbe5f3;border-radius:999px;overflow:hidden}.bar>div{height:100%;width:0%;background:linear-gradient(90deg,#37b981,#255fd6);transition:.2s}.filelist,.results{display:grid;gap:14px}.fileitem,.seg{border:1px solid var(--line);border-radius:18px;padding:14px;background:#fbfdff}.fileitem b,.seg b{display:block}.muted{color:var(--muted)}video{width:100%;max-height:250px;border-radius:16px;background:#000;margin-top:10px}.pill{display:inline-block;border-radius:999px;padding:4px 10px;background:#e8f0ff;color:#204fba;font-weight:800;font-size:13px}.note{margin-top:18px;padding:18px;border-radius:20px;background:#fff8e7;border:1px solid #f6d57a;color:#92400e;font-weight:700}@media(max-width:860px){.grid{grid-template-columns:1fr}.hero{padding:24px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <h1>🎬 影片平均切割工具</h1>
+    <p>純前端 HTML，可部署在 GitHub Pages。支援多檔 MP4 上傳、平均切割、預覽、下載與 ZIP 打包。</p>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>一、上傳影片</h2>
+      <div id="drop" class="drop">
+        <h3>拖曳 MP4 到這裡，或點擊選擇檔案</h3>
+        <p class="muted">可一次選擇多個影片。檔案只會在瀏覽器本機處理，不會上傳伺服器。</p>
+      </div>
+      <input id="files" type="file" accept="video/mp4,video/*" multiple>
+      <div id="fileList" class="filelist" style="margin-top:14px"></div>
+    </section>
+
+    <section class="card">
+      <h2>二、切割設定</h2>
+      <div class="controls">
+        <div class="row">
+          <label for="parts">每個影片切成</label>
+          <input id="parts" type="number" min="2" max="20" value="3">
+          <span>段</span>
+        </div>
+        <div class="row">
+          <label for="mode">切割模式</label>
+          <select id="mode">
+            <option value="copy">快速切割 copy，速度快</option>
+            <option value="reencode">重新編碼，切點較穩</option>
+          </select>
+        </div>
+        <div class="row">
+          <button id="start">開始切割</button>
+          <button id="clear" class="ghost">清除結果</button>
+          <button id="zip" class="ghost" disabled>下載全部 ZIP</button>
+        </div>
+        <div class="bar"><div id="progress"></div></div>
+        <div id="status" class="log">等待上傳影片...</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2>三、分段結果</h2>
+    <div id="results" class="results"></div>
+  </section>
+
+  <div class="note">GitHub Pages 注意：請用 https://stevenkirbypeng.github.io/... 開啟，不要用 file:// 直接開。第一次載入 FFmpeg.wasm 需要網路與一點時間。</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const $ = (id)=>document.getElementById(id);
+const drop=$('drop'), input=$('files'), fileList=$('fileList'), results=$('results'), statusBox=$('status'), progress=$('progress');
+const startBtn=$('start'), clearBtn=$('clear'), zipBtn=$('zip');
+let files=[], outputs=[];
+let ffmpeg=null, loaded=false;
+
+function log(msg){ statusBox.textContent = msg; }
+function appendLog(msg){ statusBox.textContent += '\n' + msg; statusBox.scrollTop=statusBox.scrollHeight; }
+function setProgress(p){ progress.style.width = Math.max(0, Math.min(100, p)) + '%'; }
+function safeName(name){ return name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9_\-\u4e00-\u9fff]/g,'_').slice(0,80); }
+function fmt(n){ return (n/1024/1024).toFixed(2)+' MB'; }
+
+function renderFiles(){
+  fileList.innerHTML='';
+  files.forEach((f,i)=>{
+    const div=document.createElement('div'); div.className='fileitem';
+    div.innerHTML=`<b>${i+1}. ${f.name}</b><span class="muted">${fmt(f.size)}</span>`;
+    fileList.appendChild(div);
+  });
+}
+function addFiles(list){ files=[...files, ...Array.from(list).filter(f=>f.type.startsWith('video/') || f.name.toLowerCase().endsWith('.mp4'))]; renderFiles(); }
+
+drop.onclick=()=>input.click();
+input.onchange=e=>addFiles(e.target.files);
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+
+async function loadFFmpeg(){
+  if(loaded) return;
+  if(!window.FFmpeg || !window.FFmpeg.FFmpeg) throw new Error('FFmpeg 套件尚未載入，請確認網路或 CDN 是否可連線。');
+  log('正在載入 FFmpeg.wasm，第一次會比較久...');
+  const { FFmpeg } = window.FFmpeg;
+  const { toBlobURL } = window.FFmpegUtil;
+  ffmpeg = new FFmpeg();
+  ffmpeg.on('log', ({ message }) => { if(message) appendLog(message); });
+  ffmpeg.on('progress', ({ progress: p }) => { if(Number.isFinite(p)) setProgress(p*100); });
+
+  // 關鍵：GitHub Pages 不能直接拿 CDN js 當 Worker，所以要轉成 same-origin blob URL。
+  const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+  const workerBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd';
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
+    workerURL: await toBlobURL(`${workerBase}/814.ffmpeg.js`, 'text/javascript')
+  });
+  loaded=true;
+  log('FFmpeg 載入完成，可以開始切割。');
+}
+
+function getDuration(file){
+  return new Promise((resolve,reject)=>{
+    const v=document.createElement('video');
+    v.preload='metadata';
+    v.onloadedmetadata=()=>{ URL.revokeObjectURL(v.src); resolve(v.duration); };
+    v.onerror=()=>reject(new Error('無法讀取影片長度：'+file.name));
+    v.src=URL.createObjectURL(file);
+  });
+}
+
+async function splitOne(file, n, mode){
+  const duration = await getDuration(file);
+  const partLen = duration / n;
+  const inputName = safeName(file.name) + '_input.mp4';
+  await ffmpeg.writeFile(inputName, await window.FFmpegUtil.fetchFile(file));
+  appendLog(`\n處理：${file.name}，長度 ${duration.toFixed(2)} 秒，切成 ${n} 段`);
+
+  for(let i=0;i<n;i++){
+    const start=i*partLen;
+    const len=Math.min(partLen, duration-start);
+    const outName=`${safeName(file.name)}_part${String(i+1).padStart(2,'0')}.mp4`;
+    appendLog(`產生 ${outName}`);
+    if(mode==='reencode'){
+      await ffmpeg.exec(['-ss', String(start.toFixed(3)), '-i', inputName, '-t', String(len.toFixed(3)), '-c:v','libx264','-c:a','aac','-movflags','+faststart', outName]);
+    }else{
+      await ffmpeg.exec(['-ss', String(start.toFixed(3)), '-i', inputName, '-t', String(len.toFixed(3)), '-c','copy', outName]);
+    }
+    const data = await ffmpeg.readFile(outName);
+    const blob = new Blob([data.buffer], {type:'video/mp4'});
+    outputs.push({name:outName, blob});
+    renderOutput(outName, blob, file.name, i+1, n);
+    await ffmpeg.deleteFile(outName).catch(()=>{});
+  }
+  await ffmpeg.deleteFile(inputName).catch(()=>{});
+}
+
+function renderOutput(name, blob, source, part, total){
+  const url=URL.createObjectURL(blob);
+  const div=document.createElement('div'); div.className='seg';
+  div.innerHTML=`<span class="pill">${source}｜${part}/${total}</span><b>${name}</b><span class="muted">${fmt(blob.size)}</span><video controls src="${url}"></video><div style="margin-top:10px"><a class="btn" href="${url}" download="${name}">下載此段</a></div>`;
+  results.appendChild(div);
+}
+
+startBtn.onclick=async()=>{
+  try{
+    if(files.length===0) return alert('請先選擇影片檔。');
+    const n=parseInt($('parts').value,10);
+    if(!n || n<2) return alert('切割段數至少為 2。');
+    startBtn.disabled=true; zipBtn.disabled=true; setProgress(0); results.innerHTML=''; outputs=[];
+    await loadFFmpeg();
+    for(let i=0;i<files.length;i++){
+      await splitOne(files[i], n, $('mode').value);
+    }
+    setProgress(100); log('🎉 全部影片切割完成！'); zipBtn.disabled = outputs.length===0;
+  }catch(err){ console.error(err); alert('發生錯誤：' + (err.message || err)); log('發生錯誤：' + (err.message || err)); }
+  finally{ startBtn.disabled=false; }
+};
+
+zipBtn.onclick=async()=>{
+  const zip=new JSZip();
+  outputs.forEach(o=>zip.file(o.name, o.blob));
+  log('正在建立 ZIP...');
+  const blob=await zip.generateAsync({type:'blob'}, m=>setProgress(m.percent));
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='video_segments.zip'; a.click();
+  log('ZIP 已建立並開始下載。');
+};
+
+clearBtn.onclick=()=>{ files=[]; outputs=[]; fileList.innerHTML=''; results.innerHTML=''; setProgress(0); zipBtn.disabled=true; log('已清除。'); };
+</script>
+</body>
+</html>
