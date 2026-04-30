@@ -102,6 +102,8 @@ const statusText = document.getElementById('statusText');
 
 let selectedFiles = [];
 let ffmpeg = null;
+let ffmpegLoaded = false;
+let ffmpegLoadingPromise = null;
 let allSegments = [];
 
 function setStatus(text, percent = null) {
@@ -165,23 +167,38 @@ function renderFiles() {
 }
 
 async function loadFFmpeg() {
-  if (ffmpeg) return ffmpeg;
-  ffmpeg = new FFmpeg();
-  ffmpeg.on('log', ({ message }) => console.log(message));
-  ffmpeg.on('progress', ({ progress }) => {
-    const now = Number.isFinite(progress) ? progress * 100 : 0;
-    progressBar.style.width = Math.min(98, Math.max(0, now)).toFixed(1) + '%';
-  });
+  if (ffmpegLoaded && ffmpeg) return ffmpeg;
+  if (ffmpegLoadingPromise) return ffmpegLoadingPromise;
 
-  setStatus('正在載入 FFmpeg.wasm，第一次會比較久...', 5);
-  const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
-  });
-  setStatus('FFmpeg 載入完成，可以開始切割。', 10);
-  return ffmpeg;
+  ffmpegLoadingPromise = (async () => {
+    try {
+      ffmpeg = new FFmpeg();
+      ffmpeg.on('log', ({ message }) => console.log(message));
+      ffmpeg.on('progress', ({ progress }) => {
+        const now = Number.isFinite(progress) ? progress * 100 : 0;
+        progressBar.style.width = Math.min(98, Math.max(0, now)).toFixed(1) + '%';
+      });
+
+      setStatus('正在載入 FFmpeg.wasm，第一次會比較久...', 5);
+      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
+      });
+      ffmpegLoaded = true;
+      setStatus('FFmpeg 載入完成，可以開始切割。', 10);
+      return ffmpeg;
+    } catch (e) {
+      ffmpegLoaded = false;
+      ffmpeg = null;
+      throw e;
+    } finally {
+      ffmpegLoadingPromise = null;
+    }
+  })();
+
+  return ffmpegLoadingPromise;
 }
 
 async function splitOneFile(file, n, fileIndex, totalFiles) {
@@ -190,7 +207,8 @@ async function splitOneFile(file, n, fileIndex, totalFiles) {
 
   const base = safeName(file.name);
   const inputName = `${base}_${Date.now()}_${fileIndex}.mp4`;
-  await ffmpeg.writeFile(inputName, await fetchFile(file));
+  const api = await loadFFmpeg();
+  await api.writeFile(inputName, await fetchFile(file));
   const partLen = duration / n;
 
   const group = document.createElement('div');
@@ -218,8 +236,8 @@ async function splitOneFile(file, n, fileIndex, totalFiles) {
       : ['-ss', start.toFixed(3), '-i', inputName, '-t', segDur.toFixed(3), '-c', 'copy', '-avoid_negative_ts', 'make_zero', outName];
 
     setStatus(`正在切割：${file.name}｜第 ${i + 1}/${n} 段`, ((fileIndex / totalFiles) * 100) + ((i / n) * (100 / totalFiles)));
-    await ffmpeg.exec(args);
-    const data = await ffmpeg.readFile(outName);
+    await api.exec(args);
+    const data = await api.readFile(outName);
     const blob = new Blob([data.buffer], { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     allSegments.push({ name: outName, blob });
@@ -233,9 +251,9 @@ async function splitOneFile(file, n, fileIndex, totalFiles) {
       <a class="download" href="${url}" download="${outName}">下載此段</a>
     `;
     segGrid.appendChild(seg);
-    try { await ffmpeg.deleteFile(outName); } catch(e) {}
+    try { await api.deleteFile(outName); } catch(e) {}
   }
-  try { await ffmpeg.deleteFile(inputName); } catch(e) {}
+  try { await api.deleteFile(inputName); } catch(e) {}
 }
 
 function addFiles(files) {
