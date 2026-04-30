@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Video Splitter FINAL</title>
+<style>
+body{font-family:Arial;background:#111;color:#fff;text-align:center}
+.box{border:2px dashed #888;padding:30px;margin:20px}
+video{width:300px;margin:10px}
+button{padding:10px 20px;margin:10px}
+</style>
+</head>
+<body>
+
+<h1>🎬 Video Splitter (GitHub Pages Ready)</h1>
+
+<div class="box">
+<input type="file" id="files" multiple accept="video/mp4">
+<br><br>
+<label>Split parts:</label>
+<input type="number" id="parts" value="2">
+<br><br>
+<button onclick="process()">Start</button>
+</div>
+
+<div id="output"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js"></script>
+<script>
+const { createFFmpeg, fetchFile } = FFmpeg;
+
+const ffmpeg = createFFmpeg({
+    log:true,
+    corePath:'./ffmpeg/ffmpeg-core.js'
+});
+
+async function loadFF(){
+    if(!ffmpeg.isLoaded()){
+        await ffmpeg.load();
+    }
+}
+
+async function process(){
+    await loadFF();
+
+    const files = document.getElementById('files').files;
+    const parts = parseInt(document.getElementById('parts').value);
+    const out = document.getElementById('output');
+    out.innerHTML = "";
+
+    for(let f of files){
+        ffmpeg.FS('writeFile', f.name, await fetchFile(f));
+
+        for(let i=0;i<parts;i++){
+            const outname = f.name+"_part"+(i+1)+".mp4";
+
+            await ffmpeg.run(
+                "-i", f.name,
+                "-ss", (i*5)+"",
+                "-t", "5",
+                "-c", "copy",
+                outname
+            );
+
+            const data = ffmpeg.FS('readFile', outname);
+            const url = URL.createObjectURL(new Blob([data.buffer], {type:'video/mp4'}));
+
+            const v = document.createElement('video');
+            v.src = url;
+            v.controls = true;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = outname;
+            a.innerText = "Download "+outname;
+
+            out.appendChild(v);
+            out.appendChild(document.createElement("br"));
+            out.appendChild(a);
+            out.appendChild(document.createElement("hr"));
+        }
+    }
+}
+</script>
+
+</body>
+</html>
